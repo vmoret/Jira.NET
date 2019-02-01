@@ -102,5 +102,20 @@ namespace Jira
 			data["body"] = body;
 			return m_client.ExecuteRequest(Method.POST, "issue/" + issueKey + "/comment", data);
 		}
+		
+		public JObject GetIssueWatchers(string issueIdOrKey)
+		{
+			return m_client.ExecuteRequest(Method.GET, "issue/" + issueIdOrKey + "/watchers");
+		}
+		
+		public JObject AddWatcher(string issueIdOrKey, string username)
+		{
+			return m_client.ExecuteRequest(Method.POST, "issue/" + issueIdOrKey + "/watchers", username);
+		}
+		
+		public JObject RemoveWatcher(string issueIdOrKey, string username)
+		{
+			return m_client.ExecuteRequest(Method.DELETE, "issue/" + issueIdOrKey + "/watchers?username=" + username);
+		}
 	}
 }

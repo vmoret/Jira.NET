@@ -6,6 +6,7 @@ namespace Jira.Remote
 	{
 		GET,
 		POST,
-		PUT
+		PUT,
+		DELETE
 	}
 }
