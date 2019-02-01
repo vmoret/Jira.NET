@@ -48,11 +48,16 @@ namespace Jira
 			return m_client.ExecuteRequest(Method.POST, "issue", data);
 		}
 		
-		public JObject UpdateIssue(string issueKey, JObject fields)
+		public JObject UpdateIssue(string issueKey, JObject fields, bool notifyUsers=true)
 		{
 			var data = new JObject();
 			data["fields"] = fields;
-			return m_client.ExecuteRequest(Method.PUT, "issue/" + issueKey, data);
+			var url = "issue/" + issueKey;
+			if (!notifyUsers) 
+			{
+				url += "?notifyUsers=false";
+			}
+			return m_client.ExecuteRequest(Method.PUT, url, data);
 		}
 		
 		public JObject LinkIssue(string inwardKey, string outwardKey, IssueLinkType linkType)
