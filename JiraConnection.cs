@@ -290,7 +290,7 @@ namespace Jira
 					continue;
 				}
 				var key = HttpUtility.UrlEncode(keyOrValues[i]);
-				list.Append(string.Format("{0}={1}", key, value));
+				list.Add(string.Format("{0}={1}", key, value));
 			}
 			return "?" + string.Join("&", list.ToArray());
 		}
