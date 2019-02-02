@@ -24,11 +24,6 @@ namespace Jira
 			return obj["key"].ToString();
 		}
 		
-		public JObject GetIssue(string issueIdOrKey)
-		{
-			return m_client.ExecuteRequest(Method.GET, "issue/" + issueIdOrKey);
-		}
-		
 		public JObject Search(string jql, int startAt, int maxResults, string[] fields)
 		{
 			var data = new JObject();
@@ -40,7 +35,14 @@ namespace Jira
 			return m_client.ExecuteRequest(Method.POST, "search", data);
 		}
 		
-		public JObject CreateIssue(JObject fields)
+		#region Issue
+		
+		public JObject GetIssue(string issueIdOrKey)
+		{
+			return m_client.ExecuteRequest(Method.GET, "issue/" + issueIdOrKey);
+		}
+		
+		public JObject CreateIssue(JObject fields, JObject update = null)
 		{
 			var data = new JObject();
 			data["fields"] = fields;
@@ -48,7 +50,8 @@ namespace Jira
 			return m_client.ExecuteRequest(Method.POST, "issue", data);
 		}
 		
-		public JObject UpdateIssue(string issueIdOrKey, JObject fields, bool notifyUsers=true)
+		
+		public JObject EditIssue(string issueIdOrKey, JObject fields, bool notifyUsers=true)
 		{
 			var data = new JObject();
 			data["fields"] = fields;
@@ -59,6 +62,8 @@ namespace Jira
 			}
 			return m_client.ExecuteRequest(Method.PUT, url, data);
 		}
+		
+		#endregion
 		
 		public JObject LinkIssue(string inwardKey, string outwardKey, IssueLinkType linkType)
 		{
