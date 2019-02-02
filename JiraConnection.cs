@@ -24,9 +24,9 @@ namespace Jira
 			return obj["key"].ToString();
 		}
 		
-		public JObject GetIssue(string issueKey)
+		public JObject GetIssue(string issueIdOrKey)
 		{
-			return m_client.ExecuteRequest(Method.GET, "issue/" + issueKey);
+			return m_client.ExecuteRequest(Method.GET, "issue/" + issueIdOrKey);
 		}
 		
 		public JObject Search(string jql, int startAt, int maxResults, string[] fields)
@@ -48,11 +48,11 @@ namespace Jira
 			return m_client.ExecuteRequest(Method.POST, "issue", data);
 		}
 		
-		public JObject UpdateIssue(string issueKey, JObject fields, bool notifyUsers=true)
+		public JObject UpdateIssue(string issueIdOrKey, JObject fields, bool notifyUsers=true)
 		{
 			var data = new JObject();
 			data["fields"] = fields;
-			var url = "issue/" + issueKey;
+			var url = "issue/" + issueIdOrKey;
 			if (!notifyUsers) 
 			{
 				url += "?notifyUsers=false";
@@ -72,11 +72,11 @@ namespace Jira
 			return m_client.ExecuteRequest(Method.POST, "issueLink/", data);
 		}
 		
-		public bool ChangeStatus(string issueKey, string statusName)
+		public bool ChangeStatus(string issueIdOrKey, string statusName)
 		{
 			try
 			{
-				var transitions = m_client.ExecuteRequest(Method.GET, "issue/" + issueKey + "/transitions")["transitions"];
+				var transitions = m_client.ExecuteRequest(Method.GET, "issue/" + issueIdOrKey + "/transitions")["transitions"];
 				foreach (var transition in transitions)
 				{
 					if (transition["name"].ToString() == statusName)
@@ -84,7 +84,7 @@ namespace Jira
 						var data = new JObject();
 						data["transition"] = new JObject();
 						data["transition"]["id"] = transition["id"];
-						m_client.ExecuteRequest(Method.POST, "issue/" + issueKey + "/transitions", data);
+						m_client.ExecuteRequest(Method.POST, "issue/" + issueIdOrKey + "/transitions", data);
 						return true;
 					}
 				}
@@ -96,11 +96,11 @@ namespace Jira
 			}
 		}
 		
-		public JObject AddComment(string issueKey, string body)
+		public JObject AddComment(string issueIdOrKey, string body)
 		{
 			var data = new JObject();
 			data["body"] = body;
-			return m_client.ExecuteRequest(Method.POST, "issue/" + issueKey + "/comment", data);
+			return m_client.ExecuteRequest(Method.POST, "issue/" + issueIdOrKey + "/comment", data);
 		}
 		
 		public JObject GetIssueWatchers(string issueIdOrKey)
