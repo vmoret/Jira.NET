@@ -26,32 +26,39 @@ namespace Jira
 			return obj["key"].ToString();
 		}
 		
-		public JObject Search(string jql, int startAt, int maxResults, string[] fields)
+		#region Search
+		
+		/**
+		 * Performs a search using JQL.
+		 * 
+		 * The `jql` parameter is a full JQL expression.
+		 * 
+		 * The `startAt` parameter is the index of the first issue to return
+		 * (0-based).
+		 * 
+		 * The `maxResults` parameter is the maximum number of issues to return
+		 * (defaults to 50).
+		 * 
+		 * The `fields` param gives a list of fields to include in the response.
+		 * This can be used to retrieve a subset of fields. A particular field
+		 * can be excluded by prefixing it with a minus.
+		 * 
+		 * See also https://docs.atlassian.com/software/jira/docs/api/REST/7.12.0/#api/2/search-searchUsingSearchRequest
+		 */
+		public JObject Search(string jql, int startAt=0, int maxResults=50, string[] fields=null)
 		{
 			var data = new JObject();
 			data["jql"] = jql;
 			data["startAt"] = startAt;
 			data["maxResults"] = maxResults;
-			data["fields"] = new JArray(fields);
-			
+			if (fields != null)
+			{
+				data["fields"] = new JArray(fields);
+			}
 			return m_client.ExecuteRequest(Method.POST, "search", data);
 		}
 		
-		string BuildQueryString(params string[] keyOrValues)
-		{
-			var list = new List<string>();
-			for (int i=0; i<keyOrValues.Length-1; i+=2)
-			{
-				var value = HttpUtility.UrlEncode(keyOrValues[i+1]);
-				if (value == null)
-				{
-					continue;
-				}
-				var key = HttpUtility.UrlEncode(keyOrValues[i]);
-				list.Append(string.Format("{0}={1}", key, value));
-			}
-			return "?" + string.Join("&", list.ToArray());
-		}
+		#endregion
 		
 		#region Issue
 		
@@ -156,19 +163,90 @@ namespace Jira
 			return m_client.ExecuteRequest(Method.PUT, url, data);
 		}
 		
+		/**
+		 * Adds a new comment to an issue.
+		 *
+		 * See also https://docs.atlassian.com/software/jira/docs/api/REST/7.12.0/#api/2/issue-addComment
+		 */
+		public JObject AddComment(string issueIdOrKey, string body)
+		{
+			var data = new JObject();
+			data["body"] = body;
+			return m_client.ExecuteRequest(Method.POST, "issue/" + issueIdOrKey + "/comment", data);
+		}
+		
+		/**
+		 * Returns the list of watchers for the issue with the given key.
+		 * 
+		 * See also https://docs.atlassian.com/software/jira/docs/api/REST/7.12.0/#api/2/issue-getIssueWatchers
+		 */
+		public JObject GetIssueWatchers(string issueIdOrKey)
+		{
+			return m_client.ExecuteRequest(Method.GET, "issue/" + issueIdOrKey + "/watchers");
+		}
+		
+		/**
+		 * Adds a user to an issue's watcher list.
+		 * 
+		 * The 'username' param is a string containing the name of the user to
+		 * add to the watcher list. Must not be null.
+		 * 
+		 * See also https://docs.atlassian.com/software/jira/docs/api/REST/7.12.0/#api/2/issue-addWatcher
+		 */
+		public JObject AddWatcher(string issueIdOrKey, string username)
+		{
+			return m_client.ExecuteRequest(Method.POST, "issue/" + issueIdOrKey + "/watchers", username);
+		}
+		
+		/**
+		 * Removes a user from an issue's watcher list.
+		 * 
+		 * The 'username' param is a string containing the name of the user to
+		 * remove from the watcher list. Must not be null.
+		 * 
+		 * See also https://docs.atlassian.com/software/jira/docs/api/REST/7.12.0/#api/2/issue-removeWatcher
+		 */
+		public JObject RemoveWatcher(string issueIdOrKey, string username)
+		{
+			return m_client.ExecuteRequest(Method.DELETE, "issue/" + issueIdOrKey + "/watchers?username=" + username);
+		}
+		
 		#endregion
 		
-		public JObject LinkIssue(string inwardKey, string outwardKey, IssueLinkType linkType)
+		#region Issue Link
+		
+		/**
+		 * Creates an issue link between two issues.
+		 * 
+		 * The user requires the link issue permission for the issue which will
+		 * be linked to another issue.
+		 * 
+		 * The specified link type in the request is used to create the link and
+		 * will create a link from the first issue to the second issue using the
+		 * outward description. It also create a link from the second issue to
+		 * the first issue using the inward description of the issue link type.
+		 * It will add the supplied comment to the first issue. The comment can
+		 * have a restriction who can view it. If group is specified, only users
+		 * of this group can view this comment, if roleLevel is specified only
+		 * users who have the specified role can view this comment. The user who
+		 * creates the issue link needs to belong to the specified group or have
+		 * the specified role.
+		 * 
+		 * See also https://docs.atlassian.com/software/jira/docs/api/REST/7.12.0/#api/2/issueLink-linkIssues
+		 */
+		public JObject LinkIssue(string inwardIssueKey, string outwardIssueKey, string linkTypeName)
 		{
 			var data = new JObject();
 			data["type"] = new JObject();
-			data["type"]["name"] = linkType.ToString();
+			data["type"]["name"] = linkTypeName;
 			data["inwardIssue"] = new JObject();
-			data["inwardIssue"]["key"] = inwardKey;
+			data["inwardIssue"]["key"] = inwardIssueKey;
 			data["outwardIssue"] = new JObject();
-			data["outwardIssue"]["key"] = outwardKey;
+			data["outwardIssue"]["key"] = outwardIssueKey;
 			return m_client.ExecuteRequest(Method.POST, "issueLink/", data);
 		}
+		
+		#endregion
 		
 		public bool ChangeStatus(string issueIdOrKey, string statusName)
 		{
@@ -194,26 +272,29 @@ namespace Jira
 			}
 		}
 		
-		public JObject AddComment(string issueIdOrKey, string body)
+		#region Private Methods
+		
+		/**
+		 * Builds a query string from a key/value string array.
+		 * 
+		 * Warning: when the value is null, the key/value will be ignored.
+		 */
+		string BuildQueryString(params string[] keyOrValues)
 		{
-			var data = new JObject();
-			data["body"] = body;
-			return m_client.ExecuteRequest(Method.POST, "issue/" + issueIdOrKey + "/comment", data);
+			var list = new List<string>();
+			for (int i=0; i<keyOrValues.Length-1; i+=2)
+			{
+				var value = HttpUtility.UrlEncode(keyOrValues[i+1]);
+				if (value == null)
+				{
+					continue;
+				}
+				var key = HttpUtility.UrlEncode(keyOrValues[i]);
+				list.Append(string.Format("{0}={1}", key, value));
+			}
+			return "?" + string.Join("&", list.ToArray());
 		}
 		
-		public JObject GetIssueWatchers(string issueIdOrKey)
-		{
-			return m_client.ExecuteRequest(Method.GET, "issue/" + issueIdOrKey + "/watchers");
-		}
-		
-		public JObject AddWatcher(string issueIdOrKey, string username)
-		{
-			return m_client.ExecuteRequest(Method.POST, "issue/" + issueIdOrKey + "/watchers", username);
-		}
-		
-		public JObject RemoveWatcher(string issueIdOrKey, string username)
-		{
-			return m_client.ExecuteRequest(Method.DELETE, "issue/" + issueIdOrKey + "/watchers?username=" + username);
-		}
+		#endregion
 	}
 }
