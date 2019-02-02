@@ -21,6 +21,9 @@ namespace Jira
 			m_client = new JiraRestClient(url, username, password);
 		}
 		
+		/**
+		 * Gets the key of a JSON object.
+		 */
 		public static string GetKey(JObject obj)
 		{
 			return obj["key"].ToString();
@@ -175,6 +178,8 @@ namespace Jira
 			return m_client.ExecuteRequest(Method.POST, "issue/" + issueIdOrKey + "/comment", data);
 		}
 		
+		#region Watchers
+		
 		/**
 		 * Returns the list of watchers for the issue with the given key.
 		 * 
@@ -213,6 +218,39 @@ namespace Jira
 		
 		#endregion
 		
+		#region Transitions
+		
+		/**
+		 * Get a list of the transitions possible for this issue by the current
+		 * user, along with fields that are required and their types.
+		 * 
+		 * See also https://docs.atlassian.com/software/jira/docs/api/REST/7.12.0/#api/2/issue-getTransitions
+		 */
+		public JObject GetTransitions(string issueIdOrKey)
+		{
+			var url = "issue/" + issueIdOrKey + "/transitions";
+			return m_client.ExecuteRequest(Method.GET, url);
+		}
+		
+		/**
+		 * Perform a transition on an issue. When performing the transition you
+		 * can update or set other issue fields.
+		 * 
+		 * See also https://docs.atlassian.com/software/jira/docs/api/REST/7.12.0/#api/2/issue-doTransition
+		 */
+		public JObject DoTransition(string issueIdOrKey, string transitionId)
+		{
+			var url = "issue/" + issueIdOrKey + "/transitions";
+			var data = new JObject();
+			data["transition"] = new JObject();
+			data["transition"]["id"] = transitionId;
+			return m_client.ExecuteRequest(Method.POST, url, data);
+		}
+		
+		#endregion
+		
+		#endregion
+		
 		#region Issue Link
 		
 		/**
@@ -248,19 +286,18 @@ namespace Jira
 		
 		#endregion
 		
+		/**
+		 * Changes the status of an issue.
+		 */
 		public bool ChangeStatus(string issueIdOrKey, string statusName)
 		{
 			try
 			{
-				var transitions = m_client.ExecuteRequest(Method.GET, "issue/" + issueIdOrKey + "/transitions")["transitions"];
-				foreach (var transition in transitions)
+				foreach (var tr in GetTransitions(issueIdOrKey)["transitions"])
 				{
-					if (transition["name"].ToString() == statusName)
+					if (tr["name"].ToString() == statusName)
 					{
-						var data = new JObject();
-						data["transition"] = new JObject();
-						data["transition"]["id"] = transition["id"];
-						m_client.ExecuteRequest(Method.POST, "issue/" + issueIdOrKey + "/transitions", data);
+						DoTransition(issueIdOrKey, tr["id"].ToString());
 						return true;
 					}
 				}
