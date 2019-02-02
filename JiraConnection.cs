@@ -8,16 +8,30 @@ using Jira.Remote;
 
 namespace Jira
 {
+	/**
+	 * JiraConnection provides a proxy to the JIRA REST API.
+	 */
 	public class JiraConnection
 	{
 		readonly JiraRestClient m_client;
 		
-		public JiraConnection(string url, string username, string password)
+		/**
+		 * Initializes new instance of JiraConnection
+		 * 
+		 * The `baseURL` param is the base URL of the JIRA server.
+		 * 
+		 * The `username` param is the name of the user to log on to JIRA.
+		 * The `password` param is the password of the user to log on to JIRA.
+		 */
+		public JiraConnection(string baseURL, string username, string password)
 		{
-			if (string.IsNullOrEmpty(url))
+			if (string.IsNullOrEmpty(baseURL))
 			{
-				throw new ArgumentOutOfRangeException("url", "Expected a non empty string");
+				throw new ArgumentOutOfRangeException("baseURL", "Expected a non empty string");
 			}
+			var url = string.Format("{0}rest/api/latest", 
+			                        baseURL.EndsWith("/", StringComparison.InvariantCulture) 
+			                        ? baseURL : baseURL + "/");
 			m_client = new JiraRestClient(url, username, password);
 		}
 		
