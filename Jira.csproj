@@ -40,7 +40,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CustomFields.cs" />
     <Compile Include="IssueLinkTypes.cs" />
     <Compile Include="JiraConnection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
